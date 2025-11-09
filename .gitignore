@@ -1,0 +1,124 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
+
+# PROJECT-SPECIFIC: Raw datasets (download locally, don't commit)
+data/raw/
+data/raw/*
+*.csv
+*.xlsx
+*.xls
+
+# PROJECT-SPECIFIC: Processed data (can be regenerated)
+data/processed/
+data/processed/*
+
+# PROJECT-SPECIFIC: Model artifacts (too large for git)
+artifacts/
+artifacts/**/*
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# PROJECT-SPECIFIC: Generated figures and reports
+*.png
+*.jpg
+*.jpeg
+*.pdf
+artifacts/figures/
+artifacts/models/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Environment variables and secrets
+.env
+.env.local
+secrets.yaml
+kaggle.json
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
