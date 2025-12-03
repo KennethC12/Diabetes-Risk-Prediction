@@ -1,27 +1,74 @@
 # Diabetes Detection System
 
-A production-ready machine learning system for diabetes risk prediction using clinical and behavioral health indicators. Built with interpretability, calibration, and clinical deployment in mind.
+A production-ready deep learning system for diabetes risk prediction using NHANES clinical health data. Built with PyTorch neural networks, emphasizing interpretability, clinical deployment, and ethical AI practices.
 
 ## 🎯 Project Overview
 
-This system predicts diabetes risk using two complementary datasets:
-- **Pima Indians Diabetes Database**: Clinical measurements (glucose, BMI, insulin, etc.)
-- **CDC BRFSS Dataset**: Large-scale behavioral risk factor surveillance data
+This system predicts diabetes risk using the **National Health and Nutrition Examination Survey (NHANES)** dataset, which includes:
+- Clinical measurements (HbA1c, glucose, BMI, blood pressure)
+- Body composition metrics (weight, height, waist circumference)
+- Lipid panels (total cholesterol, HDL, LDL, triglycerides)
+- Demographic information (age, gender, race/ethnicity)
 
 The pipeline emphasizes:
-- ✅ **Clinical safety**: Calibrated probabilities, configurable decision thresholds
-- ✅ **Interpretability**: SHAP explanations for model predictions
-- ✅ **Production-ready**: FastAPI service + Streamlit demo interface
-- ✅ **Robustness**: Extensive testing, preprocessing leak prevention, stratified validation
+- ✅ **Deep Learning**: PyTorch neural networks with batch normalization and dropout
+- ✅ **Clinical Safety**: sklearn metrics for comprehensive evaluation
+- ✅ **Robustness**: Early stopping, learning rate scheduling, overfitting detection
+- ✅ **Reproducibility**: Automatic Kaggle dataset download via kagglehub
+- ✅ **Transparency**: Training history visualization and performance analysis
+
+## 🏆 Model Performance
+
+### PyTorch Neural Network (Best Model)
+- **Architecture**: 16 → 128 → 64 → 32 → 1 (with BatchNorm + Dropout)
+- **Test Accuracy**: 96.19%
+- **ROC-AUC**: 0.9487
+- **Precision**: 81.36%
+- **Recall**: 65.31%
+- **F1-Score**: 0.7245
+
+**Comparison with sklearn baselines:**
+- Outperforms Random Forest (ROC-AUC: 0.9471)
+- Outperforms Gradient Boosting (ROC-AUC: 0.9456)
+- Outperforms Logistic Regression (ROC-AUC: 0.9428)
+
+**Key predictive features:**
+1. HbA1c (LBXGH) - 42.8% importance
+2. Age (RIDAGEYR) - 8.6%
+3. Waist Circumference (BMXWAIST) - 5.6%
+4. Total Cholesterol (LBXTC) - 5.5%
+5. BMI (BMXBMI) - 4.6%
 
 ## 📊 Key Features
 
-- **Multiple model support**: Logistic Regression baseline + XGBoost/LightGBM boosted trees
-- **Class imbalance handling**: SMOTE oversampling and class-weighted training
-- **Threshold optimization**: Maximize recall at precision ≥ 0.70 or F-beta scoring
-- **Probability calibration**: Post-hoc calibration for reliable risk estimates
-- **Fairness evaluation**: Performance slices by age and sex subgroups
-- **Full explainability**: SHAP force plots and feature importance visualizations
+### Deep Learning Architecture
+- **Multi-layer perceptron** with 3 hidden layers
+- **Batch Normalization** for stable training
+- **Dropout (30%)** for regularization
+- **ReLU activation** for non-linearity
+- **Sigmoid output** for probability estimates
+- **12,993 trainable parameters**
+
+### Training Optimization
+- **Adam optimizer** with weight decay (L2 regularization)
+- **Learning rate scheduling** (ReduceLROnPlateau)
+- **Early stopping** with patience monitoring
+- **Class imbalance handling** for 7.7% diabetes prevalence
+- **Stratified train/val/test splits** (64%/16%/20%)
+
+### Evaluation & Monitoring
+- **sklearn metrics**: Accuracy, precision, recall, F1, ROC-AUC
+- **Confusion matrix** visualization
+- **ROC curves** with AUC scores
+- **Training history** plots (loss and accuracy)
+- **Overfitting analysis** with automated warnings
+
+### Data Processing
+- **Automatic Kaggle download** via kagglehub
+- **Multi-file merging** (demographic, examination, laboratory, questionnaire)
+- **Missing value imputation** (median strategy)
+- **Feature scaling** (StandardScaler with mean=0, std=1)
+- **Mini-batch training** (batch_size=64)
 
 ## 🚀 Quick Start
 
@@ -40,187 +87,301 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### Download Data
+### Required Dependencies
 
-```bash
-# Create data directory
-mkdir -p data/raw
+```txt
+# Core ML libraries
+torch>=2.0.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+numpy>=1.24.0
 
-# Download Pima dataset (automatic via script)
-python data/downloader.py --dataset pima
+# Data & visualization
+kagglehub>=0.2.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
 
-# Download BRFSS from Kaggle (requires Kaggle API credentials)
-# Place kaggle.json in ~/.kaggle/
-python data/downloader.py --dataset brfss
+# Optional (for extended features)
+shap>=0.42.0  # For model interpretability
 ```
-
-Alternative: Manually download datasets and place in `data/raw/`:
-- Pima: https://raw.githubusercontent.com/plotly/datasets/master/diabetes.csv
-- BRFSS: Kaggle BRFSS 2015 dataset
 
 ### Train Your First Model
 
-```bash
-# Train baseline logistic regression on Pima dataset
-python diabetes_app.py train --config configs/pima.yaml
+```python
+import kagglehub
 
-# Evaluate performance metrics
-python diabetes_app.py evaluate --config configs/pima.yaml
+# Download NHANES dataset (automatic)
+path = kagglehub.dataset_download(
+    "cdc/national-health-and-nutrition-examination-survey"
+)
 
-# Pick optimal decision threshold
-python diabetes_app.py pick-threshold --target-precision 0.70
+# Initialize model
+from diabetes_detection import DiabetesDetectionModel
+
+model = DiabetesDetectionModel(path)
+
+# Full training pipeline
+model.load_data()
+model.explore_data()
+model.preprocess_data()
+model.create_data_loaders(batch_size=64)
+model.build_model(hidden_sizes=[128, 64, 32], dropout_rate=0.3)
+model.train_model(epochs=100, learning_rate=0.001, patience=15)
+
+# Evaluate
+results = model.evaluate_model()
+
+# Visualizations
+model.plot_training_history()
+model.plot_roc_curve()
+model.plot_confusion_matrix()
 ```
 
-### Launch Services
+## 🧠 Model Architecture Explained
 
-```bash
-# Start FastAPI prediction server
-uvicorn serve_api:app --reload --port 8000
+### Layer-by-Layer Breakdown
 
-# In another terminal, launch Streamlit UI
-streamlit run app_dashboard.py
+```python
+DiabetesNN(
+  Input: 16 features
+    ↓
+  Linear(16 → 128)        # 2,176 parameters
+  BatchNorm1d(128)        # Normalize activations
+  ReLU()                  # Non-linearity
+  Dropout(30%)            # Regularization
+    ↓
+  Linear(128 → 64)        # 8,256 parameters
+  BatchNorm1d(64)
+  ReLU()
+  Dropout(30%)
+    ↓
+  Linear(64 → 32)         # 2,080 parameters
+  BatchNorm1d(32)
+  ReLU()
+  Dropout(30%)
+    ↓
+  Linear(32 → 1)          # 33 parameters
+  Sigmoid()               # Output probability [0, 1]
+)
 ```
 
-Access the dashboard at `http://localhost:8501`
+**Total: 12,993 trainable parameters**
 
-## 📁 Repository Structure
+### Why This Architecture?
+
+1. **Funnel shape** (16→128→64→32→1): Expands to capture complexity, then compresses to essentials
+2. **Batch normalization**: Stabilizes training, allows higher learning rates
+3. **ReLU activation**: Fast, avoids vanishing gradients
+4. **30% dropout**: Prevents overfitting on medical data
+5. **GPU-ready**: Automatically uses CUDA if available
+
+## 📈 Training Results
+
+### Typical Training Run
 
 ```
-diabetes-detection/
-├── data/                         # Data loading and validation
-│   ├── downloader.py            # Automated dataset downloads
-│   └── __init__.py
-│
-├── features/                     # Feature engineering
-│   ├── preprocess.py            # Imputation, scaling, encoding
-│   ├── engineer.py              # Feature creation (bins, interactions)
-│   └── __init__.py
-│
-├── models/                       # Model training & evaluation
-│   ├── train.py                 # Training pipeline with CV
-│   ├── evaluate.py              # Metrics, ROC/PR curves
-│   ├── threshold.py             # Decision threshold optimization
-│   ├── calibrate.py             # Probability calibration
-│   ├── registry.py              # Model persistence
-│   └── __init__.py
-│
-├── explain/                      # Model interpretability
-│   ├── shap_utils.py            # SHAP visualizations
-│   ├── reports.py               # Model/data cards
-│   └── __init__.py
-│
-├── utils/                        # Shared utilities
-│   ├── io.py                    # File I/O, logging
-│   ├── metrics.py               # Custom metric functions
-│   └── __init__.py
-│
-├── notebooks/                    # Exploratory analysis
-│   ├── 01_eda.ipynb             # Data exploration
-│   ├── 02_baseline.ipynb        # Baseline models
-│   └── 03_tree_boosting.ipynb   # Advanced models
-│
-├── tests/                        # Test suite
-│   ├── test_loaders.py
-│   ├── test_preprocess.py
-│   ├── test_train.py
-│   └── test_threshold.py
-│
-├── configs/                      # Configuration files
-│   ├── pima.yaml                # Pima dataset config
-│   └── brfss.yaml               # BRFSS dataset config
-│
-├── artifacts/                    # Generated artifacts (gitignored)
-│   ├── models/                  # Saved .pkl models
-│   └── figures/                 # Plots and visualizations
-│
-├── diabetes_app.py              # CLI application
-├── serve_api.py                 # FastAPI server
-├── app_dashboard.py             # Streamlit UI
-├── requirements.txt             # Python dependencies
-└── README.md                    # This file
+Epoch [1/100]   - Train Loss: 0.4100, Val Loss: 0.2704, Val Acc: 0.9485
+Epoch [10/100]  - Train Loss: 0.1316, Val Loss: 0.1265, Val Acc: 0.9543
+Learning rate reduced from 0.001000 to 0.000500
+Epoch [20/100]  - Train Loss: 0.1202, Val Loss: 0.1270, Val Acc: 0.9537
+Learning rate reduced from 0.000500 to 0.000250
+Early stopping triggered at epoch 26
+
+Training completed! Best validation loss: 0.1248
+
+==================================================
+OVERFITTING ANALYSIS
+==================================================
+Final Training Loss:   0.1202
+Final Validation Loss: 0.1270
+Loss Gap:              0.0068 (+5.65%)
+
+✅ GOOD: No significant overfitting detected
+✅ Training and validation accuracies are well-balanced
+✅ Validation loss improved or stabilized (good generalization)
 ```
 
-## 📈 Expected Performance
+### Performance Metrics
 
-### Pima Indians Dataset (768 samples)
-- **Logistic Regression**: ROC-AUC ≈ 0.78–0.82, PR-AUC ≈ 0.65–0.70
-- **XGBoost/LightGBM**: ROC-AUC ≈ 0.82–0.86, PR-AUC ≈ 0.70–0.75
-- **Key features**: Glucose, BMI, Age, Diabetes Pedigree Function
+```
+Confusion Matrix:
+[[1747   22]  ← 98.8% of healthy correctly identified
+ [  51   96]]  ← 65.3% of diabetic correctly identified
 
-### BRFSS Dataset (200K+ samples)
-- **Improved generalization** due to larger sample size
-- **Better calibration** on held-out test sets
-- **Behavioral features**: Physical activity, diet, healthcare access
+Classification Report:
+              precision    recall  f1-score   support
+         0.0       0.97      0.99      0.98      1769
+         1.0       0.81      0.65      0.72       147
 
-## 🧪 Testing
-
-Run the full test suite:
-
-```bash
-# All tests
-pytest tests/ -v
-
-# Specific test modules
-pytest tests/test_loaders.py
-pytest tests/test_preprocess.py
-pytest tests/test_train.py
-
-# With coverage report
-pytest tests/ --cov=. --cov-report=html
+    accuracy                           0.96      1916
 ```
 
-## 🔍 Model Interpretability
+## 🔍 Data Processing Pipeline
 
-Generate SHAP explanations:
-
-```bash
-# Generate SHAP summary plot
-python -m explain.shap_utils --model artifacts/models/xgboost_pima.pkl \
-                              --data data/processed/pima_test.csv \
-                              --output artifacts/figures/shap_summary.png
-
-# Generate model card
-python -m explain.reports --model artifacts/models/xgboost_pima.pkl \
-                          --output artifacts/model_card.md
+### 1. Automatic Data Download
+```python
+# Kagglehub handles authentication automatically
+path = kagglehub.dataset_download(
+    "cdc/national-health-and-nutrition-examination-survey"
+)
+# Downloads and caches locally for future runs
 ```
 
-## 📝 Development Workflow
+### 2. Multi-File Merging
+```python
+# Automatically loads and merges:
+# - demographic.csv (age, gender, race)
+# - examination.csv (BMI, BP, body measurements)
+# - laboratory.csv (HbA1c, glucose, lipids)
+# - questionnaire.csv (diabetes diagnosis)
+# Merged on SEQN (sequence number)
+```
 
-### Phase 1: Data Foundation
-1. Implement `data/downloader.py` for automated dataset retrieval
-2. Create data validation reports (missingness, outliers, class balance)
+### 3. Feature Selection
+```python
+# 16 carefully selected features:
+# Demographics: RIDAGEYR, RIAGENDR, RIDRETH1
+# Body: BMXBMI, BMXWT, BMXHT, BMXWAIST
+# Blood Pressure: BPXSY1, BPXDI1, BPXSY2, BPXDI2
+# Laboratory: LBXGH, LBXTC, LBDHDD, LBDLDL, LBXTR
+```
 
-### Phase 2: Feature Engineering
-1. Build preprocessing pipelines (imputation, scaling)
-2. Engineer features (BMI bins, glucose×BMI interactions)
+### 4. Missing Value Imputation
+```python
+# Median imputation for robustness
+imputer = SimpleImputer(strategy='median')
+# Fits on training, transforms on validation/test
+```
 
-### Phase 3: Model Training
-1. Train baseline logistic regression
-2. Implement XGBoost/LightGBM with early stopping
-3. Add probability calibration
+### 5. Feature Scaling
+```python
+# Standardization (mean=0, std=1)
+scaler = StandardScaler()
+# Critical for neural network convergence
+```
 
-### Phase 4: Deployment
-1. Create FastAPI prediction service
-2. Build Streamlit demo interface
+### 6. Mini-Batch Loading
+```python
+# PyTorch DataLoaders with batch_size=64
+# Shuffled training, sequential validation/test
+# Automatic GPU transfer if available
+```
 
-### Phase 5: Explainability
-1. Generate SHAP visualizations
-2. Create model and data cards
+## ⚠️ Ethical Considerations
 
-### Phase 6: Testing & CI
-1. Write unit tests for all modules
-2. Set up GitHub Actions for automated testing
+### Use of Demographic Variables
+
+This model includes **age, gender, and race/ethnicity** as features. Important notes:
+
+1. **Race is a social construct**, not a biological category
+2. Racial health disparities reflect **systemic inequalities**, not genetics
+3. Race/ethnicity has **low feature importance** (~1-2%) compared to clinical markers (HbA1c: 42.8%)
+4. Including race may help **identify underserved populations** for intervention
+5. Alternative: Remove demographic features and rely solely on clinical measurements
+
+### Recommendations for Deployment
+
+- **Clinical oversight required** - This is a screening tool, not a diagnostic tool
+- **Regular auditing** - Monitor for bias across demographic groups
+- **Threshold tuning** - Adjust decision boundary based on clinical priorities (e.g., prioritize recall for early detection)
+- **Explainability** - Provide feature importances and SHAP values for transparency
+- **Human-in-the-loop** - Never replace healthcare professionals with automated decisions
+
+## 🧪 Testing & Validation
+
+### Overfitting Detection
+
+The model includes automatic overfitting analysis:
+
+```python
+# Checks performed:
+✅ Train-validation loss gap < 10%
+✅ Train-validation accuracy gap < 5%
+✅ Validation loss trend (improving vs. diverging)
+✅ Visual inspection of training curves
+```
+
+### Cross-Validation (Future)
+
+```python
+# Planned: K-fold cross-validation
+from sklearn.model_selection import StratifiedKFold
+
+kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+# Train 5 models, report mean ± std performance
+```
+
+## 🎨 Visualization Examples
+
+### Training History
+![Training curves showing loss and accuracy over epochs](artifacts/figures/training_history_example.png)
+
+### ROC Curve
+![ROC curve with AUC=0.9487](artifacts/figures/roc_curve_example.png)
+
+### Confusion Matrix
+![Heatmap showing prediction vs. actual](artifacts/figures/confusion_matrix_example.png)
+
+## 🔧 Hyperparameter Tuning
+
+### Quick Tuning Guide
+
+```python
+# More capacity (if underfitting)
+model.build_model(hidden_sizes=[256, 128, 64], dropout_rate=0.2)
+
+# More regularization (if overfitting)
+model.build_model(hidden_sizes=[64, 32], dropout_rate=0.5)
+
+# Faster training
+model.train_model(learning_rate=0.01, batch_size=128)
+
+# More thorough training
+model.train_model(epochs=200, patience=30, learning_rate=0.0001)
+```
+
+### Grid Search (Advanced)
+
+```python
+# Iterate over hyperparameters
+for hidden_sizes in [[64, 32], [128, 64, 32], [256, 128, 64]]:
+    for dropout in [0.2, 0.3, 0.5]:
+        for lr in [0.001, 0.0001]:
+            # Train and compare validation ROC-AUC
+            pass
+```
+
+## 📚 References
+
+- **NHANES Dataset**: [CDC National Health and Nutrition Examination Survey](https://www.cdc.gov/nchs/nhanes/)
+- **PyTorch Documentation**: [pytorch.org](https://pytorch.org/docs/stable/index.html)
+- **Sklearn Metrics**: [scikit-learn.org/stable/modules/model_evaluation.html](https://scikit-learn.org/stable/modules/model_evaluation.html)
+- **Diabetes Screening Guidelines**: [American Diabetes Association](https://diabetes.org/diabetes/risk-test)
+
+## 🤝 Contributing
+
+Contributions welcome! Areas for improvement:
+
+1. **SHAP explanations** for model interpretability
+2. **Threshold optimization** for clinical use cases
+3. **Fairness metrics** across demographic subgroups
+4. **FastAPI deployment** for production serving
+5. **Streamlit dashboard** for interactive demo
+6. **Unit tests** for all components
+7. **CI/CD pipeline** with GitHub Actions
 
 ## 📄 License
 
 MIT License - see LICENSE file for details
 
-## 📚 References
+## 🙏 Acknowledgments
 
-- Pima Indians Diabetes Database: [UCI ML Repository](https://archive.ics.uci.edu/ml/datasets/diabetes)
-- CDC BRFSS: [Behavioral Risk Factor Surveillance System](https://www.cdc.gov/brfss/)
-- SHAP: [Lundberg & Lee, 2017](https://arxiv.org/abs/1705.07874)
+- NHANES dataset provided by the CDC
+- Built with PyTorch and scikit-learn
+- Inspired by responsible AI practices in healthcare
 
 ---
 
-**Built with ❤️ for responsible AI in healthcare**
+**Built with ❤️ for ethical AI in healthcare**
+
+*Note: This model is for research and educational purposes. Always consult healthcare professionals for medical decisions.*
